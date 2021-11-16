@@ -19,7 +19,9 @@ def get_predictions(image):
     image = np.expand_dims(res, axis=0)
     
     # Load saved keras model
+    checkpoint_best_path = 'app/models/checkpoints_best_only/checkpoint'
     model_best_path = get_newcnn_model()
+    model_best_path.load_weights(checkpoint_best_path)
     logger.debug('Saved CNN model loaded successfully')
 
     # Make new predictions from the newly scaled data and return this prediction
