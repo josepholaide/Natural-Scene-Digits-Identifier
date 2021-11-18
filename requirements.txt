@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pytest
+requests
+loguru
+pydantic
