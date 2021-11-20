@@ -1,27 +1,27 @@
 # Import Needed Libraries
 import uvicorn
 from PIL import Image
+import io
+import cv2
 import pandas as pd
+import numpy as np
 import tensorflow as tf
 from fastapi import FastAPI, File, UploadFile
 from pydantic import BaseModel
-from data.predictions_handler import get_predictions
+from utils.predict_utils import get_predictions
 from loguru import logger
 from models.model import get_newcnn_model
 from models.model import get_new_model
 
 
 # Initiate app instance
-app = FastAPI(title='Forged Or Not Forged', version='1.0',
+app = FastAPI(title='Natural scene images number', version='1.0',
               description='A Convolution Neural Network that classifies numbers that appear in the context of natural scene images.')
 
 
 
 # Define the Response
 class Prediction(BaseModel):
-  filename: str
-  contenttype: str
-  prediction: List[int] = []
   likely_class: int    
 
 
@@ -31,7 +31,6 @@ logger.add(sink='app/data/log_files/logs.log', format=log_format, level='DEBUG',
 
 
 # Api root or home endpoint
-@app.get('/')
 @app.get('/home')
 def read_home():
     """
@@ -45,7 +44,7 @@ def read_home():
 # Prediction endpoint
 @app.post('/predict', response_model=Prediction)
 @logger.catch()  # catch any unexpected breaks
-def get_prediction(incoming_data: Features):
+async def get_prediction(file: UploadFile = File(...)):
     """
     This endpoint serves the predictions based on the values received from a user and the saved model.
     :param incoming_data: JSON with keys representing features and values representing the associated values.
@@ -53,23 +52,19 @@ def get_prediction(incoming_data: Features):
     """
     # Read image contents
     contents = await file.read()
-    pil_image = Image.open(io.BytesIO(contents))
-    filename = pil_image.filename
-    contenttype = pil_image.format
+    #pil_image = Image.open(io.BytesIO(contents))
+    decoded = cv2.imdecode(np.frombuffer(contents, np.uint8), -1)
 
     # convert to array
-    img_array = tf.keras.preprocessing.image.img_to_array(pil_image)
+    img_array = tf.keras.preprocessing.image.img_to_array(decoded)
 
     # Make predictions based on the incoming data and saved neural net
     prediction = get_predictions(img_array)
-    logger.debug('Predictions successfully generated for the user')
+    logger.debug(f'Predictions successfully generated for the user, and image shape {decoded.shape}')
 
-    likely_class = np.argmax(predictions)
+    likely_class = np.argmax(prediction)
     # Return the predicted class and the predicted probability
     return {
-      'filename': filename,
-      'contenttype': contenttype,
-      'prediction': prediction,
       'likely_class': likely_class
     }
 

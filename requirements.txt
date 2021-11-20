@@ -4,3 +4,9 @@ pytest
 requests
 loguru
 pydantic
+tensorflow
+pandas
+numpy
+python-multipart
+Pillow
+cv2
