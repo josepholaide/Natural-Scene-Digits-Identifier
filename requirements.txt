@@ -9,4 +9,4 @@ pandas
 numpy
 python-multipart
 Pillow
-cv2
+opencv-python
